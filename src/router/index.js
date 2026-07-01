@@ -4,6 +4,7 @@ import Register from "../views/Register.vue";
 import Login from "../views/Login.vue";
 import Dashboard from "@/views/Dashboard.vue";
 import Home from "@/views/Home.vue";
+import CustomerLayout from "../layouts/CustomerLayout.vue";
 
 
 // lazy-loaded pages
@@ -22,70 +23,105 @@ const OwnerLayout = () => import("../views/owner/OwnerLayout.vue");
 
 const routes = [
   // AUTH
-  { path: "/login", component: Login },
-  { path: "/register", component: Register },
+ // AUTH
+{ path: "/login", component: Login },
+{ path: "/register", component: Register },
 
-  // PUBLIC HOME
-  { path: "/", component: Home },
-
-  // USER
-  { path: "/dashboard", component: Dashboard, meta: { requiresAuth: true } },
-  { path: "/orders", component: Orders, meta: { requiresAuth: true, role: "customer" } },
-  { path: "/checkout", component: Checkout, meta: { requiresAuth: true, role: "customer" } },
-  { path: "/cart", component: Cart, meta: { requiresAuth: true, role: "customer" } },
-
-  // RESTAURANT
-  { path: "/restaurant/:id", component: Restaurant },
-
-
-
-
- // ADMIN
+// CUSTOMER
 {
-  path: "/admin/dashboard",
-  component: () =>
-    import("../views/admin/AdminDashboard.vue"),
-  meta: {
-    requiresAuth: true,
-    role: "admin",
-  },
+  path: "/",
+  component: CustomerLayout,
+  children: [
+    {
+      path: "",
+      component: Home,
+    },
+    {
+      path: "restaurant/:id",
+      component: Restaurant,
+    },
+    {
+      path: "cart",
+      component: Cart,
+      meta: {
+        requiresAuth: true,
+        role: "customer",
+      },
+    },
+    {
+      path: "checkout",
+      component: Checkout,
+      meta: {
+        requiresAuth: true,
+        role: "customer",
+      },
+    },
+    {
+      path: "orders",
+      component: Orders,
+      meta: {
+        requiresAuth: true,
+        role: "customer",
+      },
+    },
+    {
+      path: "dashboard",
+      component: Dashboard,
+      meta: {
+        requiresAuth: true,
+        role: "customer",
+      },
+    },
+  ],
 },
 
-{
-  path: "/admin/users",
-  component: () =>
-    import("../views/admin/AdminUsers.vue"),
-  meta: {
-    requiresAuth: true,
-    role: "admin",
-  },
-},
 
-{
-  path: "/admin/orders",
-  component: () =>
-    import("../views/admin/Orders.vue"),
-  meta: {
-    requiresAuth: true,
-    role: "admin",
-  },
-},
 
-{
-  path: "/admin/restaurants",
+
+ {
+  path: "/admin",
   component: () =>
-    import("../views/admin/AdminRestaurant.vue"),
+    import("../views/admin/AdminLayout.vue"),
   meta: {
     requiresAuth: true,
     role: "admin",
   },
+  children: [
+    {
+      path: "dashboard",
+      component: () =>
+        import("../views/admin/AdminDashboard.vue"),
+    },
+
+    {
+      path: "users",
+      component: () =>
+        import("../views/admin/AdminUsers.vue"),
+    },
+
+    {
+      path: "restaurants",
+      component: () =>
+        import("../views/admin/AdminRestaurant.vue"),
+    },
+
+    {
+      path: "orders",
+      component: () =>
+        import("../views/admin/Orders.vue"),
+    },
+  ],
 },
 
   // OWNER ROUTES
+// OWNER ROUTES
 {
   path: "/owner",
   component: OwnerLayout,
-  meta: { requiresAuth: true, role: "owner" },
+  meta: {
+    requiresAuth: true,
+    role: "owner",
+  },
   children: [
     {
       path: "dashboard",
@@ -109,7 +145,8 @@ const routes = [
     },
     {
       path: "profile",
-      component: () => import("../views/owner/Profile.vue"),
+      component: () =>
+        import("../views/owner/Profile.vue"),
     },
   ],
 },

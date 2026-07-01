@@ -19,13 +19,13 @@ onMounted(async () => {
   <router-view />
 
   <!-- ONLY show for non-owner pages -->
-  <CartButton v-if="!route.path.startsWith('/owner')" />
-  <BottomNv v-if="!route.path.startsWith('/owner')" />
+  <CartButton v-if="route.path.startsWith('/user')" />
+  <BottomNv v-if="route.path.startsWith('/user')" />
 </template>
 
 <style>
 body {
-  padding-bottom: 90px;
+  
 }
 
 /* GLOBAL DARK MODE SUPPORT */

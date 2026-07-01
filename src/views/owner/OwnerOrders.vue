@@ -1,14 +1,345 @@
+<template>
+  <div class="orders-page">
+
+    <!-- ===========================
+        PAGE HEADER
+    ============================ -->
+
+    <div class="page-header">
+
+      <div>
+        <h2>Order Management</h2>
+        <p>
+          Manage incoming orders and monitor restaurant activity.
+        </p>
+      </div>
+
+      <div class="header-right">
+
+        <div class="stat-box">
+          <span>Total</span>
+          <strong>{{ orders.length }}</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ===========================
+        FILTERS
+    ============================ -->
+
+    <div class="card custom-card mb-4">
+
+      <div class="card-body">
+
+        <div class="row g-3">
+
+          <div class="col-lg-8">
+
+            <input
+              v-model="search"
+              class="form-control"
+              placeholder="Search customer or order ID..."
+            >
+
+          </div>
+
+          <div class="col-lg-4">
+
+
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ===========================
+        LOADING
+    ============================ -->
+
+    <div
+      v-if="loading"
+      class="row"
+    >
+
+      <div
+        class="col-xl-6 mb-4"
+        v-for="i in 4"
+        :key="i"
+      >
+
+        <div class="card custom-card">
+
+          <div class="card-body">
+
+            <div class="placeholder-line shimmer"></div>
+
+            <div class="placeholder-line short shimmer"></div>
+
+            <div class="placeholder-line shimmer"></div>
+
+            <div class="placeholder-line short shimmer"></div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ===========================
+        EMPTY STATE
+    ============================ -->
+
+    <div
+      v-else-if="filteredOrders.length===0"
+      class="empty-state"
+    >
+
+      <i class="bi bi-receipt"></i>
+
+      <h3>No Orders Found</h3>
+
+      <p>
+        Orders matching your search will appear here.
+      </p>
+
+    </div>
+
+    <!-- ===========================
+        ORDERS
+    ============================ -->
+
+    <div
+      v-else
+      class="row"
+    >
+
+      <div
+        class="col-xl-6 mb-4"
+        v-for="order in filteredOrders"
+        :key="order.id"
+      >
+
+        <div class="card order-card">
+
+          <div class="card-body">
+
+            <!-- HEADER -->
+
+            <div class="order-header">
+
+              <div>
+
+                <h5>
+
+                  {{ order.user?.firstname }}
+
+                  {{ order.user?.lastname }}
+
+                </h5>
+
+                <small>
+
+                  Order #{{ order.id }}
+
+                </small>
+
+              </div>
+
+              <div class="text-end">
+
+                <h4 class="price">
+
+                  ₦{{ order.total }}
+
+                </h4>
+
+                <span
+                  class="badge"
+                  :class="statusBadge(order.status)"
+                >
+                  {{ statusLabel(order.status) }}
+                </span>
+
+              </div>
+
+            </div>
+
+            <!-- DATE -->
+
+            <div class="date">
+
+              {{ order.created_at }}
+
+            </div>
+
+            <!-- ITEMS -->
+
+            <div class="items">
+
+              <div
+                v-for="item in order.items"
+                :key="item.id"
+                class="item-row"
+              >
+
+                <div>
+
+                  <strong>
+
+                    {{ item.food?.name }}
+
+                  </strong>
+
+                  <div class="qty">
+
+                    Qty:
+                    {{ item.quantity }}
+
+                  </div>
+
+                </div>
+
+                <strong>
+
+                  ₦{{ item.price }}
+
+                </strong>
+
+              </div>
+
+            </div>
+
+            <!-- ACTIONS -->
+
+            <div class="actions">
+
+              <button
+  v-if="nextStatus(order.status)"
+  class="btn btn-primary"
+  @click="confirmAction(order)"
+>
+  {{ nextStatus(order.status).label }}
+</button>
+
+              <div
+                v-else-if="
+                  order.status==='ready_for_pickup'
+                "
+                class="waiting-badge"
+              >
+
+                📦 Waiting For Rider
+
+              </div>
+
+              <div
+                v-else-if="
+                  order.status==='on_the_way'
+                "
+                class="waiting-badge dark"
+              >
+
+                🛵 Rider Delivering
+
+              </div>
+
+              <div
+                v-else
+                class="waiting-badge success"
+              >
+
+                ✅ Delivered
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ===========================
+     CONFIRM MODAL
+=========================== -->
+
+<div
+  v-if="showModal"
+  class="modal-overlay"
+>
+  <div class="confirm-modal">
+
+    <h4>Update Order?</h4>
+
+    <p>
+      Are you sure you want to change this order to
+      <strong>{{ nextAction?.label }}</strong>?
+    </p>
+
+    <div class="confirm-actions">
+
+      <button
+        class="btn btn-light"
+        @click="cancelModal"
+      >
+        Cancel
+      </button>
+
+      <button
+        class="btn btn-primary"
+        @click="updateStatus"
+      >
+        Yes, Update
+      </button>
+
+    </div>
+
+  </div>
+</div>
+</template>
+
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import api from "../../services/api";
 
+/* =========================
+   STATE
+========================= */
+
 const orders = ref([]);
-const loading = ref(true);
+const loading =ref(true);
+
+const search = ref("");
+const filter = ref("all");
+
+const showModal = ref(false);
+const selectedOrder = ref(null);
+const nextAction = ref(null);
+
+/* =========================
+   LOAD ORDERS
+========================= */
 
 const loadOrders = async () => {
+  loading.value = true;
+
   try {
     const res = await api.get("/owner/orders");
     orders.value = res.data;
+    console.log(res.data);
+    
   } catch (err) {
     console.log(err);
   } finally {
@@ -16,19 +347,39 @@ const loadOrders = async () => {
   }
 };
 
-const updateStatus = async (order, status) => {
-  try {
-    await api.put(`/owner/orders/${order.id}`, {
-      status,
-    });
+/* =========================
+   FILTERED ORDERS
+========================= */
 
-    order.status = status;
-  } catch (err) {
-    console.log(err);
+const filteredOrders = computed(() => {
+  let data = [...orders.value];
+
+  if (filter.value !== "all") {
+    data = data.filter(
+      (o) => o.status === filter.value
+    );
   }
-};
 
-// OWNER WORKFLOW
+  if (search.value.trim()) {
+    const keyword = search.value.toLowerCase();
+
+    data = data.filter((o) => {
+      return (
+        String(o.id).includes(keyword) ||
+        `${o.user?.firstname} ${o.user?.lastname}`
+          .toLowerCase()
+          .includes(keyword)
+      );
+    });
+  }
+
+  return data;
+});
+
+/* =========================
+   NEXT STATUS
+========================= */
+
 const nextStatus = (status) => {
   switch (status) {
     case "pending":
@@ -54,7 +405,46 @@ const nextStatus = (status) => {
   }
 };
 
-// BADGE COLOR
+/* =========================
+   CONFIRM MODAL
+========================= */
+
+const confirmAction = (order) => {
+  selectedOrder.value = order;
+  nextAction.value = nextStatus(order.status);
+
+  showModal.value = true;
+};
+
+const cancelModal = () => {
+  showModal.value = false;
+  selectedOrder.value = null;
+  nextAction.value = null;
+};
+
+const updateStatus = async () => {
+  if (!selectedOrder.value || !nextAction.value) return;
+
+  try {
+    await api.put(`/owner/orders/${selectedOrder.value.id}`, {
+      status: nextAction.value.value,
+    });
+
+    // Update the order on the page immediately
+    selectedOrder.value.status = nextAction.value.value;
+
+    cancelModal();
+  } catch (err) {
+    console.log(err);
+
+    alert("Failed to update order.");
+  }
+};
+
+/* =========================
+   BADGES
+========================= */
+
 const statusBadge = (status) => {
   switch (status) {
     case "pending":
@@ -80,7 +470,6 @@ const statusBadge = (status) => {
   }
 };
 
-// FRIENDLY LABEL
 const statusLabel = (status) => {
   switch (status) {
     case "pending":
@@ -106,188 +495,204 @@ const statusLabel = (status) => {
   }
 };
 
+/* =========================
+   STATS
+========================= */
+
+const totalOrders = computed(() => orders.value.length);
+
+const pendingOrders = computed(() =>
+  orders.value.filter(
+    (o) => o.status === "pending"
+  ).length
+);
+
+const preparingOrders = computed(() =>
+  orders.value.filter(
+    (o) => o.status === "preparing"
+  ).length
+);
+
+const deliveredOrders = computed(() =>
+  orders.value.filter(
+    (o) => o.status === "delivered"
+  ).length
+);
+
+/* =========================
+   INIT
+========================= */
+
 onMounted(loadOrders);
 </script>
 
-<template>
-  <div class="container py-4">
-
-    <!-- HEADER -->
-
-    <div class="mb-4">
-      <h2 class="fw-bold mb-1">
-        📦 Orders
-      </h2>
-
-      <p class="text-muted mb-0">
-        Manage incoming customer orders
-      </p>
-    </div>
-
-    <!-- LOADING -->
-
-    <div
-      v-if="loading"
-      class="text-center py-5 text-muted"
-    >
-      Loading orders...
-    </div>
-
-    <!-- EMPTY -->
-
-    <div
-      v-else-if="orders.length === 0"
-      class="alert alert-light border text-center"
-    >
-      No orders available yet
-    </div>
-
-    <!-- ORDERS -->
-
-    <div
-      v-for="order in orders"
-      :key="order.id"
-      class="order-card card border-0 shadow-sm mb-4"
-    >
-      <div class="card-body">
-
-        <!-- TOP -->
-
-        <div
-          class="d-flex justify-content-between align-items-start mb-3"
-        >
-
-          <div>
-
-            <h5 class="fw-semibold mb-1">
-              {{ order.user?.firstname }}
-              {{ order.user?.lastname }}
-            </h5>
-
-            <small class="text-muted">
-              Order #{{ order.id }}
-            </small>
-
-          </div>
-
-          <div class="text-end">
-
-            <div class="fw-bold fs-5">
-              ₦{{ order.total }}
-            </div>
-
-            <span
-              class="badge mt-2"
-              :class="statusBadge(order.status)"
-            >
-              {{ statusLabel(order.status) }}
-            </span>
-
-          </div>
-
-        </div>
-
-        <hr>
-
-        <!-- ITEMS -->
-
-        <h6 class="fw-semibold mb-3">
-          Ordered Items
-        </h6>
-
-        <div
-          v-for="item in order.items"
-          :key="item.id"
-          class="d-flex justify-content-between py-2 border-bottom"
-        >
-
-          <span>
-            {{ item.quantity }} ×
-            {{ item.food?.name }}
-          </span>
-
-          <strong>
-            ₦{{ item.price }}
-          </strong>
-
-        </div>
-
-        <!-- ACTIONS -->
-
-        <div
-          class="d-flex justify-content-end mt-4"
-        >
-
-          <!-- Owner Progress -->
-
-          <button
-            v-if="nextStatus(order.status)"
-            class="btn btn-primary"
-            @click="
-              updateStatus(
-                order,
-                nextStatus(order.status).value
-              )
-            "
-          >
-            {{ nextStatus(order.status).label }}
-          </button>
-
-          <!-- Waiting -->
-
-          <span
-            v-else-if="
-              order.status === 'ready_for_pickup'
-            "
-            class="badge badge-soft-info fs-6 px-3 py-2"
-          >
-            📦 Waiting For Rider
-          </span>
-
-          <!-- Rider -->
-
-          <span
-            v-else-if="
-              order.status === 'on_the_way'
-            "
-            class="badge badge-soft-dark fs-6 px-3 py-2"
-          >
-            🛵 Rider Delivering
-          </span>
-
-          <!-- Delivered -->
-
-          <span
-            v-else-if="
-              order.status === 'delivered'
-            "
-            class="badge badge-soft-success fs-6 px-3 py-2"
-          >
-            ✅ Delivered
-          </span>
-
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-</template>
 
 <style scoped>
 
-.order-card{
-  border-radius:16px;
+/* ===========================
+   PAGE
+=========================== */
+
+.page-header h2{
+  color:#111827;
+}
+
+.page-header p{
+  color:#6b7280;
+}
+
+/* ===========================
+   STATS
+=========================== */
+
+.stat-card{
+  border:none;
+  border-radius:18px;
+  overflow:hidden;
   transition:.25s;
 }
 
+.stat-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+
+.stat-icon{
+  width:58px;
+  height:58px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  background:#eef2ff;
+}
+
+.stat-title{
+  color:#6b7280;
+  font-size:14px;
+}
+
+.stat-value{
+  font-size:30px;
+  font-weight:700;
+}
+
+/* ===========================
+   FILTER CARD
+=========================== */
+
+.filter-card{
+  border:none;
+  border-radius:18px;
+}
+
+.search-box{
+  position:relative;
+}
+
+.search-box i{
+  position:absolute;
+  left:14px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#9ca3af;
+}
+
+.search-box input{
+  padding-left:42px;
+  height:48px;
+  border-radius:12px;
+}
+
+.form-select{
+  height:48px;
+  border-radius:12px;
+}
+
+/* ===========================
+   ORDER CARD
+=========================== */
+
+.order-card{
+  border:none;
+  border-radius:18px;
+  transition:.25s;
+  overflow:hidden;
+}
+
 .order-card:hover{
-  transform:translateY(-2px);
+  transform:translateY(-3px);
+  box-shadow:0 18px 35px rgba(0,0,0,.08);
+}
+
+.order-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:20px;
+}
+
+.order-id{
+  font-size:20px;
+  font-weight:700;
+}
+
+.customer-name{
+  font-size:18px;
+  font-weight:600;
+}
+
+.order-meta{
+  color:#6b7280;
+  font-size:14px;
+}
+
+.total{
+  font-size:28px;
+  font-weight:700;
+}
+
+.items-title{
+  font-weight:600;
+  margin-bottom:15px;
+}
+
+.item-row{
+  display:flex;
+  justify-content:space-between;
+  padding:12px 0;
+  border-bottom:1px solid #f3f4f6;
+}
+
+.item-row:last-child{
+  border-bottom:none;
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
+
+.action-btn{
+  border-radius:12px;
+  padding:11px 22px;
+  font-weight:600;
+}
+
+/* ===========================
+   BADGES
+=========================== */
+
+.badge{
+  padding:10px 16px;
+  border-radius:30px;
+  font-weight:600;
+  font-size:13px;
 }
 
 .badge-soft-secondary{
-  background:#e5e7eb;
-  color:#374151;
+  background:#f3f4f6;
+  color:#4b5563;
 }
 
 .badge-soft-primary{
@@ -302,7 +707,12 @@ onMounted(loadOrders);
 
 .badge-soft-info{
   background:#cffafe;
-  color:#0e7490;
+  color:#155e75;
+}
+
+.badge-soft-dark{
+  background:#e5e7eb;
+  color:#111827;
 }
 
 .badge-soft-success{
@@ -310,9 +720,139 @@ onMounted(loadOrders);
   color:#166534;
 }
 
-.badge-soft-dark{
-  background:#e5e7eb;
-  color:#111827;
+/* ===========================
+   EMPTY STATE
+=========================== */
+
+.empty-state{
+  background:white;
+  border-radius:18px;
+  padding:70px 20px;
+  text-align:center;
+  box-shadow:0 8px 25px rgba(0,0,0,.04);
+}
+
+.empty-state .icon{
+  font-size:70px;
+  margin-bottom:20px;
+}
+
+.empty-state h4{
+  font-weight:700;
+}
+
+.empty-state p{
+  color:#6b7280;
+}
+
+/* ===========================
+   LOADER
+=========================== */
+
+.skeleton{
+  height:180px;
+  border-radius:18px;
+  background:linear-gradient(
+      90deg,
+      #f3f4f6 25%,
+      #e5e7eb 37%,
+      #f3f4f6 63%
+  );
+  background-size:400% 100%;
+  animation:loading 1.3s infinite;
+  margin-bottom:20px;
+}
+
+@keyframes loading{
+
+0%{
+background-position:100% 0;
+}
+
+100%{
+background-position:-100% 0;
+}
+
+}
+
+/* ===========================
+   MODAL
+=========================== */
+
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.confirm-modal{
+  width:420px;
+  max-width:92%;
+  background:white;
+  border-radius:20px;
+  padding:28px;
+  animation:pop .2s ease;
+}
+
+.confirm-modal h4{
+  font-weight:700;
+}
+
+.confirm-modal p{
+  color:#6b7280;
+}
+
+.confirm-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:24px;
+}
+
+@keyframes pop{
+
+from{
+transform:scale(.9);
+opacity:0;
+}
+
+to{
+transform:scale(1);
+opacity:1;
+}
+
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media(max-width:768px){
+
+.order-header{
+flex-direction:column;
+}
+
+.total{
+font-size:22px;
+}
+
+.stat-value{
+font-size:24px;
+}
+
+.confirm-actions{
+flex-direction:column;
+}
+
+.confirm-actions button{
+width:100%;
+}
+
 }
 
 </style>

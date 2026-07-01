@@ -7,33 +7,53 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-/* ======================
-   STATE
-====================== */
 const sidebarOpen = ref(false);
+
+/* DARK MODE */
 const isDark = ref(localStorage.getItem("theme") === "dark");
 
-/* ======================
-   COMPUTED FIX (IMPORTANT)
-====================== */
-const hasRestaurant = computed(() => {
-  return !!authStore.user?.restaurant_exists;
+const toggleDark = () => {
+  isDark.value = !isDark.value;
+
+  localStorage.setItem("theme", isDark.value ? "dark" : "light");
+
+  document.documentElement.setAttribute(
+    "data-theme",
+    isDark.value ? "dark" : "light"
+  );
+};
+
+/* INIT THEME */
+onMounted(() => {
+  document.documentElement.setAttribute(
+    "data-theme",
+    isDark.value ? "dark" : "light"
+  );
 });
 
-/* ======================
-   LINKS
-====================== */
-const links = [
-  { name: "Dashboard", path: "/owner/dashboard", icon: "📊" },
-  { name: "Foods", path: "/owner/foods", icon: "🍔" },
-  { name: "Categories", path: "/owner/categories", icon: "🍽️" },
-  { name: "Orders", path: "/owner/orders", icon: "📦" },
-  { name: "Profile", path: "/owner/profile", icon: "👤" },
-];
+/* NAV LINKS */
+const links = computed(() => {
+  const menu = [
+    { name: "Dashboard", path: "/owner/dashboard", icon: "📊" },
+    { name: "Foods", path: "/owner/foods", icon: "🍔" },
+    { name: "Categories", path: "/owner/categories", icon: "🍽️" },
+    { name: "Orders", path: "/owner/orders", icon: "📦" },
+    { name: "Profile", path: "/owner/profile", icon: "👤" },
+  ];
 
-/* ======================
-   FUNCTIONS
-====================== */
+  if (!authStore.user?.restaurant_exists) {
+    menu.push({
+      name: "Create Restaurant",
+      path: "/owner/create-restaurant",
+      icon: "🏪",
+    });
+  }
+
+  return menu;
+});
+
+const isActive = (path) => route.path === path;
+
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value;
 };
@@ -46,25 +66,6 @@ const logout = async () => {
   await authStore.logout();
   router.push("/login");
 };
-
-const isActive = (path) => route.path === path;
-
-const toggleDarkMode = () => {
-  isDark.value = !isDark.value;
-  localStorage.setItem("theme", isDark.value ? "dark" : "light");
-
-  document.documentElement.setAttribute(
-    "data-theme",
-    isDark.value ? "dark" : "light"
-  );
-};
-
-onMounted(() => {
-  document.documentElement.setAttribute(
-    "data-theme",
-    isDark.value ? "dark" : "light"
-  );
-});
 </script>
 
 <template>
@@ -81,80 +82,78 @@ onMounted(() => {
     <aside :class="['sidebar', { open: sidebarOpen }]">
 
       <div class="brand">
-        🍽️ Food Admin
+        🍽️ Merchant Panel
+      </div>
+
+      <div class="user">
+        <strong>
+          {{ authStore.user?.firstname }}
+        </strong>
+        <small>{{ authStore.user?.role }}</small>
       </div>
 
       <nav class="nav">
-
-        <!-- MAIN LINKS -->
-        <router-link
-          v-for="link in links"
-          :key="link.path"
-          :to="link.path"
-          class="nav-item"
-          :class="{ active: isActive(link.path) }"
-          @click="closeSidebar"
-        >
-          <span>{{ link.icon }}</span>
-          <span>{{ link.name }}</span>
-        </router-link>
-
-        <!-- CREATE RESTAURANT (FIXED) -->
-        <router-link
-          v-if="!hasRestaurant"
-          to="/owner/create-restaurant"
-          class="nav-item create-restaurant"
-          @click="closeSidebar"
-        >
-          🍽️ Create Restaurant
-        </router-link>
+<router-link
+  v-for="link in links"
+  :key="link.path"
+  :to="link.path"
+  class="nav-item"
+  :class="{ active: isActive(link.path) }"
+  @click="closeSidebar"
+>
+  <span class="icon">{{ link.icon }}</span>
+  <span>{{ link.name }}</span>
+</router-link>
 
       </nav>
 
-      <!-- DARK MODE -->
-      <button class="dark-btn" @click="toggleDarkMode">
-        {{ isDark ? "☀️ Light Mode" : "🌙 Dark Mode" }}
-      </button>
+      <div class="bottom">
 
-      <!-- LOGOUT -->
-      <button class="logout" @click="logout">
-        🚪 Sign Out
-      </button>
+        <button class="btn dark" @click="toggleDark">
+          {{ isDark ? "☀️ Light Mode" : "🌙 Dark Mode" }}
+        </button>
+
+        <button class="btn logout" @click="logout">
+          🚪 Sign Out
+        </button>
+
+      </div>
 
     </aside>
 
     <!-- MAIN -->
     <div class="main">
 
+      <!-- TOPBAR -->
       <header class="topbar">
 
         <button class="hamburger" @click="toggleSidebar">
           ☰
         </button>
 
-        <div>
-          Welcome, <strong>{{ authStore.user?.firstname }}</strong>
+        <div class="title">
+          {{ route.meta?.title || "Dashboard" }}
         </div>
 
-        <div class="profile">
-          👤 {{ authStore.user?.role }}
+        <div class="right">
+          <span class="role">
+            {{ authStore.user?.role }}
+          </span>
         </div>
 
       </header>
 
+      <!-- PAGE CONTENT -->
       <main class="content">
         <router-view />
       </main>
 
     </div>
 
-  
-
   </div>
 </template>
 
 <style scoped>
-/* LAYOUT */
 .layout {
   display: flex;
   height: 100vh;
@@ -164,22 +163,26 @@ onMounted(() => {
 
 /* SIDEBAR */
 .sidebar {
-  width: 250px;
-  background: #111827;
+  width: 260px;
+  background: #0f172a;
   color: white;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  transition: 0.3s;
+  justify-content: space-between;
 }
 
 .brand {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
-/* NAV */
+.user {
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
 .nav {
   flex: 1;
   display: flex;
@@ -194,11 +197,10 @@ onMounted(() => {
   border-radius: 8px;
   color: #cbd5e1;
   text-decoration: none;
-  transition: 0.2s;
 }
 
 .nav-item:hover {
-  background: #1f2937;
+  background: #1e293b;
 }
 
 .nav-item.active {
@@ -206,32 +208,28 @@ onMounted(() => {
   color: white;
 }
 
-/* CREATE BUTTON */
-.create-restaurant {
-  background: #10b981;
-  color: white;
-  font-weight: 500;
+/* BUTTONS */
+.bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* BUTTONS */
+.btn {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.dark {
+  background: #334155;
+  color: white;
+}
+
 .logout {
   background: #ef4444;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
   color: white;
-  margin-top: 10px;
-  cursor: pointer;
-}
-
-.dark-btn {
-  background: #374151;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  color: white;
-  margin-bottom: 10px;
-  cursor: pointer;
 }
 
 /* MAIN */
@@ -243,26 +241,25 @@ onMounted(() => {
 
 /* TOPBAR */
 .topbar {
+  height: 60px;
   background: var(--card);
-  padding: 15px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  padding: 0 15px;
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* CONTENT */
-.content {
-  padding: 20px;
-  overflow-y: auto;
-}
-
-/* HAMBURGER */
 .hamburger {
   display: none;
   font-size: 22px;
   background: none;
   border: none;
-  cursor: pointer;
+}
+
+.content {
+  padding: 20px;
+  overflow-y: auto;
 }
 
 /* OVERLAY */
@@ -277,9 +274,9 @@ onMounted(() => {
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    left: -260px;
-    top: 0;
+    left: -270px;
     height: 100%;
+    transition: 0.3s;
     z-index: 20;
   }
 
