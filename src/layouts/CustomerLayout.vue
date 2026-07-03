@@ -93,8 +93,7 @@ const logout = () => {
       <div class="col-lg-4">
 
         <h3 class="footer-logo">
-          🍔 Foodly
-        </h3>
+          🍔 TAZVO        </h3>
 
         <p class="footer-text">
           Order delicious meals from your favourite restaurants and get them delivered fast to your doorstep.
@@ -138,7 +137,7 @@ const logout = () => {
 
         <p>📍 Lagos, Nigeria</p>
 
-        <p>📧 support@foodly.com</p>
+        <p>📧 support@tasvo.com</p>
 
         <p>☎ +234 800 000 0000</p>
 

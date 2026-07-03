@@ -48,6 +48,14 @@ export const useAuthStore = defineStore("auth", {
   }
 },
 
+async googleLogin(token) {
+  this.token = token;
+
+  localStorage.setItem("token", token);
+
+  await this.fetchUser();
+},
+
     logout() {
       this.user = null;
       this.token = null;

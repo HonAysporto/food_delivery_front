@@ -5,6 +5,9 @@ import Login from "../views/Login.vue";
 import Dashboard from "@/views/Dashboard.vue";
 import Home from "@/views/Home.vue";
 import CustomerLayout from "../layouts/CustomerLayout.vue";
+import ForgotPassword from "../views/ForgotPassword.vue";
+import ResetPassword from "../views/ResetPassword.vue";
+const GoogleAuth = () => import("../views/GoogleAuth.vue");
 
 
 // lazy-loaded pages
@@ -26,6 +29,19 @@ const routes = [
  // AUTH
 { path: "/login", component: Login },
 { path: "/register", component: Register },
+{
+  path: "/forgot-password",
+  component: ForgotPassword,
+},
+{
+  path: "/reset-password",
+  component: ResetPassword,
+},
+
+{
+  path: "/google-auth",
+  component: GoogleAuth,
+},
 
 // CUSTOMER
 {
@@ -73,7 +89,11 @@ const routes = [
       },
     },
   ],
+
+
 },
+
+
 
 
 
@@ -199,12 +219,12 @@ router.beforeEach((to, from, next) => {
   // ==========================
   // Already logged in
   // ==========================
-  if (
-    (to.path === "/login" || to.path === "/register") &&
-    token
-  ) {
-    return next("/");
-  }
+if (
+  ["/login", "/register", "/forgot-password"].includes(to.path) &&
+  token
+) {
+  return next("/");
+}
 
   // ==========================
   // Role Protection

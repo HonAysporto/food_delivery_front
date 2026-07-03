@@ -78,7 +78,7 @@ const handleRegister = async () => {
         <!-- HEADER SECTION -->
         <div style="text-align: center; margin-bottom: 2rem; color: white;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">🚀</div>
-          <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Foodly</h1>
+          <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">TAZVO</h1>
           <p style="font-size: 1rem; opacity: 0.9;">Join thousands of hungry customers</p>
         </div>
 

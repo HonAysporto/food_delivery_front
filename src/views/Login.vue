@@ -13,6 +13,12 @@ const form = ref({
 
 const loading = ref(false);
 const error = ref("");
+const showPassword = ref(false);
+
+const loginWithGoogle = () => {
+  window.location.href =
+    "http://127.0.0.1:8000/api/auth/google";
+};
 
 const handleLogin = async () => {
   error.value = "";
@@ -56,7 +62,7 @@ const handleLogin = async () => {
         <!-- HEADER SECTION -->
         <div style="text-align: center; margin-bottom: 2rem; color: white;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">🚀</div>
-          <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Foodly</h1>
+          <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">TAZVO</h1>
           <p style="font-size: 1rem; opacity: 0.9;">Order delicious food at your fingertips</p>
         </div>
 
@@ -102,17 +108,36 @@ const handleLogin = async () => {
                 <label for="password" style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1a1a1a; font-size: 0.95rem;">
                   🔐 Password
                 </label>
-                <input
-                  id="password"
-                  v-model="form.password"
-                  type="password"
-                  class="form-control"
-                  placeholder="••••••••"
-                  required
-                  style="border-radius: 10px; border: 2px solid #e8e8e8; padding: 0.9rem 1.1rem; font-size: 1rem; transition: all 0.3s ease;"
-                  @focus="$event.target.style.borderColor = '#00d084'; $event.target.style.boxShadow = '0 0 0 3px rgba(0, 208, 132, 0.1)'"
-                  @blur="$event.target.style.borderColor = '#e8e8e8'; $event.target.style.boxShadow = 'none'"
-                />
+              <div style="position: relative;">
+  <input
+    id="password"
+    v-model="form.password"
+    :type="showPassword ? 'text' : 'password'"
+    class="form-control"
+    placeholder="••••••••"
+    required
+    style="border-radius: 10px; border: 2px solid #e8e8e8; padding: 0.9rem 3rem 0.9rem 1.1rem; font-size: 1rem; transition: all 0.3s ease;"
+    @focus="$event.target.style.borderColor = '#00d084'; $event.target.style.boxShadow = '0 0 0 3px rgba(0, 208, 132, 0.1)'"
+    @blur="$event.target.style.borderColor = '#e8e8e8'; $event.target.style.boxShadow = 'none'"
+  />
+
+  <button
+    type="button"
+    @click="showPassword = !showPassword"
+    style="
+      position:absolute;
+      right:12px;
+      top:50%;
+      transform:translateY(-50%);
+      border:none;
+      background:none;
+      cursor:pointer;
+      font-size:18px;
+    "
+  >
+    {{ showPassword ? "🙈" : "👁️" }}
+  </button>
+</div>
               </div>
 
               <!-- REMEMBER ME & FORGOT PASSWORD -->
@@ -121,7 +146,16 @@ const handleLogin = async () => {
                   <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;"/>
                   Remember me
                 </label>
-                <a href="#" style="color: #00d084; text-decoration: none; font-weight: 600;">Forgot password?</a>
+                <router-link
+    to="/forgot-password"
+    style="
+      color:#00d084;
+      text-decoration:none;
+      font-weight:600;
+    "
+>
+    Forgot Password?
+</router-link>
               </div>
 
               <!-- SIGN IN BUTTON -->
@@ -145,13 +179,21 @@ const handleLogin = async () => {
             </div>
 
             <!-- SOCIAL BUTTONS -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-              <button type="button" class="btn btn-light" style="border-radius: 10px; border: 2px solid #e8e8e8; padding: 0.75rem; font-weight: 600;">
-                <span style="font-size: 1.3rem;">f</span> Facebook
-              </button>
-              <button type="button" class="btn btn-light" style="border-radius: 10px; border: 2px solid #e8e8e8; padding: 0.75rem; font-weight: 600;">
-                <span style="font-size: 1.3rem;">G</span> Google
-              </button>
+            <div style="display: grid; grid-template-columns: 1fr ; gap: 1rem; margin-bottom: 1.5rem;">
+            <button
+  type="button"
+  class="btn btn-light"
+  style="
+    border-radius:10px;
+    border:2px solid #e8e8e8;
+    padding:0.75rem;
+    font-weight:600;
+  "
+   @click="loginWithGoogle"
+>
+  <span style="font-size:1.3rem;">G</span>
+  Google
+</button>
             </div>
 
             <!-- REGISTER LINK -->
