@@ -16,8 +16,7 @@ const error = ref("");
 const showPassword = ref(false);
 
 const loginWithGoogle = () => {
-  window.location.href =
-    "http://127.0.0.1:8000/api/auth/google";
+  window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
 };
 
 const handleLogin = async () => {

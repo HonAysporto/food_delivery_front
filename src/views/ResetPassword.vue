@@ -49,7 +49,7 @@ const resetPassword = async () => {
 
   try {
     const response = await axios.post(
-      "http://127.0.0.1:8000/api/reset-password",
+      `${import.meta.env.VITE_API_URL}/reset-password`,
       form.value
     );
 

@@ -14,7 +14,7 @@ const sendResetLink = async () => {
 
     try {
         const response = await axios.post(
-            "http://127.0.0.1:8000/api/forgot-password",
+            `${import.meta.env.VITE_API_URL}/forgot-password`,
             {
                 email: email.value,
             }
