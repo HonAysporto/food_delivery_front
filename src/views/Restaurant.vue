@@ -52,7 +52,7 @@ const addToCart = (food) => {
   }
 
   cartStore.addToCart(food);
-  toast.success(`${food.name} added to cart!`);
+  // toast.success(`${food.name} added to cart!`);
 };
 
 onMounted(loadRestaurant);
