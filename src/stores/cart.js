@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
+import { toast } from "vue3-toastify";
 
 export const useCartStore = defineStore("cart", {
-    persist: true,
+  persist: true,
 
   state: () => ({
     items: [],
@@ -20,17 +21,32 @@ export const useCartStore = defineStore("cart", {
 
   actions: {
     addToCart(food) {
+      // Prevent ordering from multiple restaurants
+      if (this.items.length > 0) {
+        const restaurantId = this.items[0].restaurant_id;
+
+        if (restaurantId !== food.restaurant_id) {
+          toast.error(
+            "You can only order from one restaurant at a time. Please clear your cart first."
+          );
+          return;
+        }
+      }
+
       const existingItem = this.items.find(
         (item) => item.id === food.id
       );
 
       if (existingItem) {
         existingItem.quantity++;
+        toast.success("Quantity updated.");
       } else {
         this.items.push({
           ...food,
           quantity: 1,
         });
+
+        toast.success(`${food.name} added to cart.`);
       }
     },
 
@@ -62,6 +78,7 @@ export const useCartStore = defineStore("cart", {
 
     clearCart() {
       this.items = [];
+      toast.success("Cart cleared.");
     },
   },
 });
