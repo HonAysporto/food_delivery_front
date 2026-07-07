@@ -1,6 +1,9 @@
 import { defineStore } from "pinia";
-import { toast } from "vue3-toastify";
+import { useToast } from "vue-toastification";
 
+
+
+const toast = useToast();
 export const useCartStore = defineStore("cart", {
   persist: true,
 
